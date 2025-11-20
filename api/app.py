@@ -7,7 +7,7 @@ app = Flask(__name__, template_folder='../templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')  # Use env var for production
 
 # Database configuration - using SQLite for Vercel compatibility
-DATABASE = os.environ.get('DATABASE', 'flask_app.db')
+DATABASE = os.environ.get('DATABASE', '/tmp/flask_app.db')
 
 def get_db_connection():
     conn = sqlite3.connect(DATABASE)
@@ -46,14 +46,14 @@ def register():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO users (username, password) VALUES (%s, %s)', (username, hashed_password))
+        cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({'message': 'User registered successfully'})
-    except mysql.connector.IntegrityError:
+    except sqlite3.IntegrityError:
         return jsonify({'message': 'Username already exists'}), 400
-    except mysql.connector.Error as err:
+    except sqlite3.Error as err:
         return jsonify({'message': f'Database error: {str(err)}'}), 500
 
 @app.route('/login', methods=['POST'])
@@ -66,11 +66,11 @@ def login():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT password FROM users WHERE username = %s', (username,))
+        cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
         result = cursor.fetchone()
         cursor.close()
         conn.close()
-        if result and check_password_hash(result[0], password):
+        if result and check_password_hash(result['password'], password):
             session['username'] = username
             return jsonify({'message': 'Login successful'})
         else:
