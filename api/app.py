@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, session
-import sqlite3
+import mysql.connector
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
