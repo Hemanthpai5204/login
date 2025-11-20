@@ -1,54 +1,33 @@
 from flask import Flask, render_template, request, jsonify, session
-import mysql.connector
+import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 
 app = Flask(__name__, template_folder='../templates')
 app.secret_key = os.environ.get('SECRET_KEY', 'your_secret_key')  # Use env var for production
 
-# Database configuration - for Vercel, use environment variables
-db_config = {
-    'host': os.environ.get('DB_HOST', 'localhost'),
-    'user': os.environ.get('DB_USER', 'root'),
-    'password': os.environ.get('DB_PASSWORD', 'jeevanpai2006'),
-    'database': os.environ.get('DB_NAME', 'flask_app')
-}
+# Database configuration - using SQLite for Vercel compatibility
+DATABASE = os.environ.get('DATABASE', 'flask_app.db')
 
 def get_db_connection():
-    return mysql.connector.connect(**db_config)
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 # Create database and table if not exists
 def create_database_and_table():
-    try:
-        conn = mysql.connector.connect(
-            host=db_config['host'],
-            user=db_config['user'],
-            password=db_config['password']
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL
         )
-        cursor = conn.cursor()
-        cursor.execute('CREATE DATABASE IF NOT EXISTS {}'.format(db_config['database']))
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except mysql.connector.Error as err:
-        print(f"Database creation error: {err}")
-        return
-
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(255) UNIQUE NOT NULL,
-                password VARCHAR(255) NOT NULL
-            )
-        ''')
-        conn.commit()
-        cursor.close()
-        conn.close()
-    except mysql.connector.Error as err:
-        print(f"Table creation error: {err}")
+    ''')
+    conn.commit()
+    cursor.close()
+    conn.close()
 
 create_database_and_table()
 
