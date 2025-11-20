@@ -37,6 +37,7 @@ def home():
 
 @app.route('/register', methods=['POST'])
 def register():
+    create_database_and_table()  # Create table if not exists
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
