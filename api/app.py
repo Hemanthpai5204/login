@@ -29,7 +29,7 @@ def create_database_and_table():
     cursor.close()
     conn.close()
 
-create_database_and_table()
+# create_database_and_table()  # Commented out to avoid import-time execution
 
 @app.route('/')
 def home():
@@ -58,6 +58,7 @@ def register():
 
 @app.route('/login', methods=['POST'])
 def login():
+    create_database_and_table()  # Create table if not exists
     data = request.get_json()
     username = data.get('username')
     password = data.get('password')
@@ -75,7 +76,7 @@ def login():
             return jsonify({'message': 'Login successful'})
         else:
             return jsonify({'message': 'Invalid credentials'}), 401
-    except mysql.connector.Error as err:
+    except sqlite3.Error as err:
         return jsonify({'message': f'Database error: {str(err)}'}), 500
 
 @app.route('/login', methods=['GET'])
