@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login App</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 400px; margin: auto; }
+        form { margin-bottom: 20px; }
+        input { width: 100%; padding: 8px; margin: 5px 0; }
+        button { padding: 10px; width: 100%; background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .hidden { display: none; }
+        .message { color: red; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="register-section">
+            <h2>Register</h2>
+            <form id="register-form">
+                <input type="text" id="reg-username" placeholder="Username" required>
+                <input type="password" id="reg-password" placeholder="Password" required>
+                <button type="submit">Register</button>
+            </form>
+            <p>Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+        </div>
+
+        <div id="login-section" class="hidden">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="text" id="login-username" placeholder="Username" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+        </div>
+
+        <div id="welcome-section" class="hidden">
+            <h2>Welcome to this page</h2>
+            <p>You are logged in as <span id="username"></span></p>
+            <button onclick="logout()">Logout</button>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        const apiBase = '/api'; // For Vercel, adjust if needed
+
+        function showMessage(msg) {
+            document.getElementById('message').textContent = msg;
+        }
+
+        function showRegister() {
+            document.getElementById('register-section').classList.remove('hidden');
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('welcome-section').classList.add('hidden');
+        }
+
+        function showLogin() {
+            document.getElementById('register-section').classList.add('hidden');
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('welcome-section').classList.add('hidden');
+        }
+
+        function showWelcome(username) {
+            document.getElementById('register-section').classList.add('hidden');
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('welcome-section').classList.remove('hidden');
+            document.getElementById('username').textContent = username;
+        }
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const response = await fetch(`${apiBase}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            showMessage(data.message);
+            if (response.ok) {
+                showLogin();
+            }
+        });
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const response = await fetch(`${apiBase}/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await response.json();
+            showMessage(data.message);
+            if (response.ok) {
+                showWelcome(username);
+            }
+        });
+
+        async function logout() {
+            const response = await fetch(`${apiBase}/logout`, { method: 'POST' });
+            const data = await response.json();
+            showMessage(data.message);
+            if (response.ok) {
+                showLogin();
+            }
+        }
+
+        // Check if already logged in on page load
+        window.onload = async () => {
+            const response = await fetch(`${apiBase}/login`);
+            if (response.ok) {
+                const data = await response.json();
+                showWelcome(data.username);
+            } else {
+                showRegister();
+            }
+        };
+    </script>
+</body>
+</html>
